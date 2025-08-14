@@ -6,13 +6,13 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create-drop  # Usa "update" si no quieres que se borre la BD al reiniciar
+      ddl-auto: update  # ← ahora los datos no se borrarán
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
         id:
-        new_generator_mappings: false
+          new_generator_mappings: false
 
 server:
   port: 8080
