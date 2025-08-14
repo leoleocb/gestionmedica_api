@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/gestionmedica_db
+    username: root
+    password: admin
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop  # Usa "update" si no quieres que se borre la BD al reiniciar
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+        id:
+        new_generator_mappings: false
+
+server:
+  port: 8080
+
+security:
+  jwt:
+    secret-key: clave-secreta-supersegura-123456
+    expiration: 3600000  # 1 hora (en milisegundos)
