@@ -18,7 +18,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableMethodSecurity  // 🟢 Habilita @PreAuthorize en los controladores
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -31,8 +31,42 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
+                        // 🔓 Endpoints públicos
+                        .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/home", "/public/**").permitAll()
+
+                        // 👤 Pacientes: solo admin crea/elimina, paciente puede consultar su info
+                        .requestMatchers(HttpMethod.POST, "/api/pacientes/**").hasAnyAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/pacientes/**").hasAnyAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/pacientes/**").hasAnyAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/pacientes/**").hasAnyAuthority("ROLE_ADMIN","ROLE_PACIENTE")
+
+                        // 🩺 Médicos: solo admin gestiona, médico puede consultar su perfil
+                        .requestMatchers(HttpMethod.POST, "/api/medicos/**").hasAnyAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/medicos/**").hasAnyAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/medicos/**").hasAnyAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/medicos/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO")
+
+                        // 📅 Citas: admin y paciente gestionan, médico puede consultar
+                        .requestMatchers(HttpMethod.POST, "/api/citas/**").hasAnyAuthority("ROLE_ADMIN","ROLE_PACIENTE")
+                        .requestMatchers(HttpMethod.PUT, "/api/citas/**").hasAnyAuthority("ROLE_ADMIN","ROLE_PACIENTE")
+                        .requestMatchers(HttpMethod.DELETE, "/api/citas/**").hasAnyAuthority("ROLE_ADMIN","ROLE_PACIENTE")
+                        .requestMatchers(HttpMethod.GET, "/api/citas/**").hasAnyAuthority("ROLE_ADMIN","ROLE_PACIENTE","ROLE_MEDICO")
+
+                        // 📋 Expedientes: solo admin y médico
+                        .requestMatchers("/api/expedientes/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO")
+
+                        // 💊 Recetas: médico crea, todos consultan
+                        .requestMatchers(HttpMethod.POST, "/api/recetas/**").hasAnyAuthority("ROLE_MEDICO")
+                        .requestMatchers(HttpMethod.GET, "/api/recetas/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO","ROLE_PACIENTE")
+
+                        // 🧪 Medicamentos: solo admin gestiona, todos consultan
+                        .requestMatchers(HttpMethod.POST, "/api/medicamentos/**").hasAnyAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/medicamentos/**").hasAnyAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/medicamentos/**").hasAnyAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/medicamentos/**").permitAll()
+
+                        // 🚨 Todo lo demás requiere estar autenticado
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
@@ -50,7 +84,7 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(); // 🔒 Encripta contraseñas
+        return new BCryptPasswordEncoder();
     }
 
     @Bean

@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class LoginRequest {
-    private String email;
+    private String email;     // 🔑 este campo debe usarse en Postman
     private String password;
 }

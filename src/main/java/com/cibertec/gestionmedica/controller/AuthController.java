@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")   // 🔑 ahora todos los endpoints de auth estarán bajo /api/auth
 @RequiredArgsConstructor
 public class AuthController {
 
