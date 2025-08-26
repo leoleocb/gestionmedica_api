@@ -1,5 +1,6 @@
 package com.cibertec.gestionmedica.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,5 +20,6 @@ public class Alergia {
 
     @ManyToOne
     @JoinColumn(name = "paciente_id")
+    @JsonIgnoreProperties({"alergias","enfermedades","citas","recetas"})
     private Paciente paciente;
 }

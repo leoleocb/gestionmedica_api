@@ -54,7 +54,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/citas/**").hasAnyAuthority("ROLE_ADMIN","ROLE_PACIENTE","ROLE_MEDICO")
 
                         // 📋 Expedientes
-                        .requestMatchers("/api/expedientes/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO")
+                        .requestMatchers(HttpMethod.GET, "/api/expediente/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO","ROLE_PACIENTE")
 
                         // 💊 Recetas
                         .requestMatchers(HttpMethod.POST, "/api/recetas/**").hasAnyAuthority("ROLE_MEDICO")

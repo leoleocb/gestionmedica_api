@@ -1,7 +1,8 @@
 package com.cibertec.gestionmedica.controller;
 
-import com.cibertec.gestionmedica.model.Receta;
-import com.cibertec.gestionmedica.repository.RecetaRepository;
+import com.cibertec.gestionmedica.model.*;
+import com.cibertec.gestionmedica.repository.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,9 +12,18 @@ import java.util.List;
 public class RecetaController {
 
     private final RecetaRepository recetaRepository;
+    private final PacienteRepository pacienteRepository;
+    private final AlergiaRepository alergiaRepository;
+    private final MedicamentoRepository medicamentoRepository;
 
-    public RecetaController(RecetaRepository recetaRepository) {
+    public RecetaController(RecetaRepository recetaRepository,
+                            PacienteRepository pacienteRepository,
+                            AlergiaRepository alergiaRepository,
+                            MedicamentoRepository medicamentoRepository) {
         this.recetaRepository = recetaRepository;
+        this.pacienteRepository = pacienteRepository;
+        this.alergiaRepository = alergiaRepository;
+        this.medicamentoRepository = medicamentoRepository;
     }
 
     @GetMapping
@@ -27,14 +37,34 @@ public class RecetaController {
     }
 
     @PostMapping
-    public Receta crear(@RequestBody Receta receta) {
-        return recetaRepository.save(receta);
-    }
+    public ResponseEntity<?> crear(@RequestBody Receta receta) {
+        // 🔎 Validar alergias antes de guardar
+        Paciente paciente = pacienteRepository.findById(receta.getPaciente().getId())
+                .orElseThrow();
 
-    @PutMapping("/{id}")
-    public Receta actualizar(@PathVariable Long id, @RequestBody Receta receta) {
-        receta.setId(id);
-        return recetaRepository.save(receta);
+        List<Alergia> alergias = alergiaRepository.findAll()
+                .stream()
+                .filter(a -> a.getPaciente() != null && a.getPaciente().getId().equals(paciente.getId()))
+                .toList();
+
+        for (RecetaItem item : receta.getItems()) {
+            Medicamento med = medicamentoRepository.findById(item.getMedicamento().getId())
+                    .orElseThrow();
+
+            boolean esAlergico = alergias.stream()
+                    .anyMatch(a -> a.getNombre().equalsIgnoreCase(med.getNombre()));
+
+            if (esAlergico) {
+                return ResponseEntity.badRequest().body(
+                        "⚠️ El paciente es alérgico a " + med.getNombre() + ", receta no permitida"
+                );
+            }
+
+            item.setReceta(receta); // enlazar item con la receta
+        }
+
+        Receta nueva = recetaRepository.save(receta);
+        return ResponseEntity.ok(nueva);
     }
 
     @DeleteMapping("/{id}")

@@ -1,44 +1,85 @@
 package com.cibertec.gestionmedica.controller;
 
-import com.cibertec.gestionmedica.model.ExpedienteMedico;
-import com.cibertec.gestionmedica.repository.ExpedienteMedicoRepository;
+import com.cibertec.gestionmedica.dto.*;
+import com.cibertec.gestionmedica.model.Paciente;
+import com.cibertec.gestionmedica.repository.PacienteRepository;
+import com.cibertec.gestionmedica.security.UserDetailsImpl;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/expedientes")
+@RequestMapping("/api/expediente")
 public class ExpedienteController {
 
-    private final ExpedienteMedicoRepository expedienteRepository;
+    private final PacienteRepository pacienteRepository;
 
-    public ExpedienteController(ExpedienteMedicoRepository expedienteRepository) {
-        this.expedienteRepository = expedienteRepository;
+    public ExpedienteController(PacienteRepository pacienteRepository) {
+        this.pacienteRepository = pacienteRepository;
     }
 
-    @GetMapping
-    public List<ExpedienteMedico> listar() {
-        return expedienteRepository.findAll();
-    }
+    @GetMapping("/paciente/{id}")
+    public ResponseEntity<?> getExpediente(@PathVariable Long id,
+                                           @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        Paciente paciente = pacienteRepository.findById(id).orElseThrow();
 
-    @GetMapping("/{id}")
-    public ExpedienteMedico obtener(@PathVariable Long id) {
-        return expedienteRepository.findById(id).orElseThrow();
-    }
+       
+        boolean esPaciente = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_PACIENTE"));
 
-    @PostMapping
-    public ExpedienteMedico crear(@RequestBody ExpedienteMedico expediente) {
-        return expedienteRepository.save(expediente);
-    }
+        if (esPaciente && !paciente.getUsuario().getId().equals(userDetails.getId())) {
+            return ResponseEntity.status(403).body("⚠️ No tienes permiso para ver el expediente de otro paciente");
+        }
 
-    @PutMapping("/{id}")
-    public ExpedienteMedico actualizar(@PathVariable Long id, @RequestBody ExpedienteMedico expediente) {
-        expediente.setId(id);
-        return expedienteRepository.save(expediente);
-    }
+       
+        ExpedienteDTO dto = new ExpedienteDTO();
+        dto.setNombrePaciente(paciente.getNombre());
+        dto.setNumeroIdentificacion(paciente.getNumeroIdentificacion());
+        dto.setFechaNacimiento(paciente.getFechaNacimiento() != null ? paciente.getFechaNacimiento().toString() : "");
 
-    @DeleteMapping("/{id}")
-    public void eliminar(@PathVariable Long id) {
-        expedienteRepository.deleteById(id);
+        dto.setAlergias(paciente.getAlergias().stream()
+                .map(a -> {
+                    AlergiaDTO adto = new AlergiaDTO();
+                    adto.setId(a.getId());
+                    adto.setNombre(a.getNombre());
+                    adto.setDescripcion(a.getDescripcion());
+                    return adto;
+                }).collect(Collectors.toList()));
+
+        dto.setEnfermedades(paciente.getEnfermedades().stream()
+                .map(e -> {
+                    EnfermedadDTO edto = new EnfermedadDTO();
+                    edto.setId(e.getId());
+                    edto.setNombre(e.getNombre());
+                    edto.setDescripcion(e.getDescripcion());
+                    return edto;
+                }).collect(Collectors.toList()));
+
+        dto.setCitas(paciente.getCitas().stream()
+                .map(c -> {
+                    CitaDTO cdto = new CitaDTO();
+                    cdto.setId(c.getId());
+                    cdto.setFecha(c.getFecha().toString());
+                    cdto.setHora(c.getHora().toString());
+                    cdto.setMotivo(c.getMotivo());
+                    cdto.setEstado(c.getEstado());
+                    return cdto;
+                }).collect(Collectors.toList()));
+
+        dto.setRecetas(paciente.getRecetas().stream()
+                .map(r -> {
+                    RecetaDTO rdto = new RecetaDTO();
+                    rdto.setId(r.getId());
+                    rdto.setFechaEmision(r.getFechaEmision().toString());
+                    rdto.setFechaCaducidad(r.getFechaCaducidad().toString());
+                    rdto.setMedicamentos(r.getItems().stream()
+                            .map(item -> item.getMedicamento().getNombre())
+                            .collect(Collectors.toList()));
+                    return rdto;
+                }).collect(Collectors.toList()));
+
+        return ResponseEntity.ok(dto);
     }
 }
