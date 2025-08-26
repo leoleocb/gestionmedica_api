@@ -35,38 +35,50 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/home", "/public/**").permitAll()
 
-                        // 👤 Pacientes: solo admin crea/elimina, paciente puede consultar su info
+                        // 👤 Pacientes
                         .requestMatchers(HttpMethod.POST, "/api/pacientes/**").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/pacientes/**").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/pacientes/**").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/pacientes/**").hasAnyAuthority("ROLE_ADMIN","ROLE_PACIENTE")
 
-                        // 🩺 Médicos: solo admin gestiona, médico puede consultar su perfil
+                        // 🩺 Médicos
                         .requestMatchers(HttpMethod.POST, "/api/medicos/**").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/medicos/**").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/medicos/**").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/medicos/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO")
 
-                        // 📅 Citas: admin y paciente gestionan, médico puede consultar
+                        // 📅 Citas
                         .requestMatchers(HttpMethod.POST, "/api/citas/**").hasAnyAuthority("ROLE_ADMIN","ROLE_PACIENTE")
                         .requestMatchers(HttpMethod.PUT, "/api/citas/**").hasAnyAuthority("ROLE_ADMIN","ROLE_PACIENTE")
                         .requestMatchers(HttpMethod.DELETE, "/api/citas/**").hasAnyAuthority("ROLE_ADMIN","ROLE_PACIENTE")
                         .requestMatchers(HttpMethod.GET, "/api/citas/**").hasAnyAuthority("ROLE_ADMIN","ROLE_PACIENTE","ROLE_MEDICO")
 
-                        // 📋 Expedientes: solo admin y médico
+                        // 📋 Expedientes
                         .requestMatchers("/api/expedientes/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO")
 
-                        // 💊 Recetas: médico crea, todos consultan
+                        // 💊 Recetas
                         .requestMatchers(HttpMethod.POST, "/api/recetas/**").hasAnyAuthority("ROLE_MEDICO")
                         .requestMatchers(HttpMethod.GET, "/api/recetas/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO","ROLE_PACIENTE")
 
-                        // 🧪 Medicamentos: solo admin gestiona, todos consultan
+                        // 🧪 Medicamentos
                         .requestMatchers(HttpMethod.POST, "/api/medicamentos/**").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/medicamentos/**").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/medicamentos/**").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/medicamentos/**").permitAll()
 
-                        // 🚨 Todo lo demás requiere estar autenticado
+                        // ⚠️ Alergias
+                        .requestMatchers(HttpMethod.POST, "/api/alergias/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO")
+                        .requestMatchers(HttpMethod.PUT, "/api/alergias/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO")
+                        .requestMatchers(HttpMethod.DELETE, "/api/alergias/**").hasAnyAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/alergias/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO","ROLE_PACIENTE")
+
+                        // ⚠️ Enfermedades
+                        .requestMatchers(HttpMethod.POST, "/api/enfermedades/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO")
+                        .requestMatchers(HttpMethod.PUT, "/api/enfermedades/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO")
+                        .requestMatchers(HttpMethod.DELETE, "/api/enfermedades/**").hasAnyAuthority("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/enfermedades/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO","ROLE_PACIENTE")
+
+                        // 🚨 Todo lo demás requiere autenticación
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

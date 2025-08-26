@@ -4,10 +4,10 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
+@Table(name = "enfermedad")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class Enfermedad {
 
     @Id
