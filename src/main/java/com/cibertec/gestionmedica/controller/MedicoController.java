@@ -1,7 +1,7 @@
 package com.cibertec.gestionmedica.controller;
 
 import com.cibertec.gestionmedica.model.Medico;
-import com.cibertec.gestionmedica.repository.MedicoRepository;
+import com.cibertec.gestionmedica.service.MedicoService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -10,35 +10,34 @@ import java.util.List;
 @RequestMapping("/api/medicos")
 public class MedicoController {
 
-    private final MedicoRepository medicoRepository;
+    private final MedicoService medicoService;
 
-    public MedicoController(MedicoRepository medicoRepository) {
-        this.medicoRepository = medicoRepository;
+    public MedicoController(MedicoService medicoService) {
+        this.medicoService = medicoService;
     }
 
     @GetMapping
     public List<Medico> listar() {
-        return medicoRepository.findAll();
+        return medicoService.listar();
     }
 
     @GetMapping("/{id}")
     public Medico obtener(@PathVariable Long id) {
-        return medicoRepository.findById(id).orElseThrow();
+        return medicoService.obtener(id);
     }
 
     @PostMapping
     public Medico crear(@RequestBody Medico medico) {
-        return medicoRepository.save(medico);
+        return medicoService.crear(medico);
     }
 
     @PutMapping("/{id}")
     public Medico actualizar(@PathVariable Long id, @RequestBody Medico medico) {
-        medico.setId(id);
-        return medicoRepository.save(medico);
+        return medicoService.actualizar(id, medico);
     }
 
     @DeleteMapping("/{id}")
     public void eliminar(@PathVariable Long id) {
-        medicoRepository.deleteById(id);
+        medicoService.eliminar(id);
     }
 }
