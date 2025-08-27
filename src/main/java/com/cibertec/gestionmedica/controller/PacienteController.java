@@ -2,6 +2,8 @@ package com.cibertec.gestionmedica.controller;
 
 import com.cibertec.gestionmedica.model.Paciente;
 import com.cibertec.gestionmedica.repository.PacienteRepository;
+import com.cibertec.gestionmedica.security.UserDetailsImpl;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,12 +18,18 @@ public class PacienteController {
         this.pacienteRepository = pacienteRepository;
     }
 
+    @GetMapping("/perfil")
+    public Paciente perfil(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        Long usuarioId = userDetails.getId();
+        return pacienteRepository.findByUsuarioId(usuarioId);
+    }
+
     @GetMapping
     public List<Paciente> listar() {
         return pacienteRepository.findAll();
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id:[0-9]+}")
     public Paciente obtener(@PathVariable Long id) {
         return pacienteRepository.findById(id).orElseThrow();
     }
@@ -31,13 +39,13 @@ public class PacienteController {
         return pacienteRepository.save(paciente);
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/{id:[0-9]+}")
     public Paciente actualizar(@PathVariable Long id, @RequestBody Paciente paciente) {
         paciente.setId(id);
         return pacienteRepository.save(paciente);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:[0-9]+}")
     public void eliminar(@PathVariable Long id) {
         pacienteRepository.deleteById(id);
     }

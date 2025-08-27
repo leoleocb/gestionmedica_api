@@ -5,8 +5,9 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.Date;
+import java.util.*;
 import java.security.Key;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtUtils {
@@ -18,13 +19,23 @@ public class JwtUtils {
     private long expiration;
 
     private Key getSigningKey() {
-        byte[] keyBytes = secretKey.getBytes();
         return Keys.hmacShaKeyFor(secretKey.getBytes());
     }
 
-    public String generateToken(String username) {
+    // 🔑 Generar token con roles
+    public String generateToken(UserDetailsImpl userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("id", userDetails.getId());
+        claims.put("name", userDetails.getName());
+        claims.put("email", userDetails.getEmail());
+        claims.put("roles", userDetails.getAuthorities()
+                .stream()
+                .map(a -> a.getAuthority())
+                .collect(Collectors.toList()));
+
         return Jwts.builder()
-                .setSubject(username)
+                .setClaims(claims)
+                .setSubject(userDetails.getUsername()) // email como "sub"
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
@@ -38,6 +49,14 @@ public class JwtUtils {
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
+    }
+
+    public Claims extractAllClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     public boolean isTokenValid(String token) {

@@ -16,6 +16,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableMethodSecurity
@@ -28,57 +33,68 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
+                .cors().and()
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 🔓 Endpoints públicos
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/home", "/public/**").permitAll()
 
-                        // 👤 Pacientes
-                        .requestMatchers(HttpMethod.POST, "/api/pacientes/**").hasAnyAuthority("ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/pacientes/**").hasAnyAuthority("ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/pacientes/**").hasAnyAuthority("ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/pacientes/**").hasAnyAuthority("ROLE_ADMIN","ROLE_PACIENTE")
+                        .requestMatchers(HttpMethod.GET, "/api/pacientes/perfil")
+                            .hasAnyAuthority("ROLE_PACIENTE", "ROLE_ADMIN")
+                        .requestMatchers("/api/pacientes/**").hasAnyAuthority("ROLE_ADMIN")
 
-                        // 🩺 Médicos
                         .requestMatchers(HttpMethod.POST, "/api/medicos/**").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/medicos/**").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/medicos/**").hasAnyAuthority("ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/medicos/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO")
+                        .requestMatchers(HttpMethod.GET, "/api/medicos/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MEDICO")
 
-                        // 📅 Citas
-                        .requestMatchers(HttpMethod.POST, "/api/citas/**").hasAnyAuthority("ROLE_ADMIN","ROLE_PACIENTE")
-                        .requestMatchers(HttpMethod.PUT, "/api/citas/**").hasAnyAuthority("ROLE_ADMIN","ROLE_PACIENTE")
-                        .requestMatchers(HttpMethod.DELETE, "/api/citas/**").hasAnyAuthority("ROLE_ADMIN","ROLE_PACIENTE")
-                        .requestMatchers(HttpMethod.GET, "/api/citas/**").hasAnyAuthority("ROLE_ADMIN","ROLE_PACIENTE","ROLE_MEDICO")
+                        .requestMatchers(HttpMethod.GET, "/api/citas/mis-citas")
+                            .hasAnyAuthority("ROLE_PACIENTE", "ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/citas/mis-citas-medico")
+                            .hasAnyAuthority("ROLE_MEDICO", "ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/citas/**")
+                            .hasAnyAuthority("ROLE_ADMIN", "ROLE_PACIENTE")
+                        .requestMatchers(HttpMethod.PUT, "/api/citas/**")
+                            .hasAnyAuthority("ROLE_ADMIN", "ROLE_PACIENTE", "ROLE_MEDICO")
+                        .requestMatchers(HttpMethod.DELETE, "/api/citas/**")
+                            .hasAnyAuthority("ROLE_ADMIN", "ROLE_PACIENTE")
+                        .requestMatchers(HttpMethod.GET, "/api/citas/**")
+                            .hasAnyAuthority("ROLE_ADMIN")
 
-                        // 📋 Expedientes
-                        .requestMatchers(HttpMethod.GET, "/api/expediente/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO","ROLE_PACIENTE")
+                        .requestMatchers(HttpMethod.GET, "/api/expedientes/mis-expedientes")
+                            .hasAnyAuthority("ROLE_PACIENTE", "ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/expedientes/paciente/**")
+                            .hasAnyAuthority("ROLE_ADMIN", "ROLE_MEDICO")
+                        .requestMatchers(HttpMethod.POST, "/api/expedientes/**")
+                            .hasAnyAuthority("ROLE_ADMIN", "ROLE_MEDICO")
+                        .requestMatchers(HttpMethod.PUT, "/api/expedientes/**")
+                            .hasAnyAuthority("ROLE_ADMIN", "ROLE_MEDICO")
 
-                        // 💊 Recetas
-                        .requestMatchers(HttpMethod.POST, "/api/recetas/**").hasAnyAuthority("ROLE_MEDICO")
-                        .requestMatchers(HttpMethod.GET, "/api/recetas/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO","ROLE_PACIENTE")
+                        .requestMatchers(HttpMethod.GET, "/api/recetas/mis-recetas")
+                            .hasAnyAuthority("ROLE_PACIENTE", "ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/recetas/**")
+                            .hasAnyAuthority("ROLE_MEDICO")
+                        .requestMatchers(HttpMethod.GET, "/api/recetas/**")
+                            .hasAnyAuthority("ROLE_ADMIN", "ROLE_MEDICO")
+                        .requestMatchers(HttpMethod.DELETE, "/api/recetas/**")
+                            .hasAnyAuthority("ROLE_ADMIN")
 
-                        // 🧪 Medicamentos
                         .requestMatchers(HttpMethod.POST, "/api/medicamentos/**").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/medicamentos/**").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/medicamentos/**").hasAnyAuthority("ROLE_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/medicamentos/**").permitAll()
 
-                        // ⚠️ Alergias
-                        .requestMatchers(HttpMethod.POST, "/api/alergias/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO")
-                        .requestMatchers(HttpMethod.PUT, "/api/alergias/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO")
+                        .requestMatchers(HttpMethod.POST, "/api/alergias/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MEDICO")
+                        .requestMatchers(HttpMethod.PUT, "/api/alergias/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MEDICO")
                         .requestMatchers(HttpMethod.DELETE, "/api/alergias/**").hasAnyAuthority("ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/alergias/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO","ROLE_PACIENTE")
+                        .requestMatchers(HttpMethod.GET, "/api/alergias/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MEDICO", "ROLE_PACIENTE")
 
-                        // ⚠️ Enfermedades
-                        .requestMatchers(HttpMethod.POST, "/api/enfermedades/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO")
-                        .requestMatchers(HttpMethod.PUT, "/api/enfermedades/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO")
+                        .requestMatchers(HttpMethod.POST, "/api/enfermedades/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MEDICO")
+                        .requestMatchers(HttpMethod.PUT, "/api/enfermedades/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MEDICO")
                         .requestMatchers(HttpMethod.DELETE, "/api/enfermedades/**").hasAnyAuthority("ROLE_ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/enfermedades/**").hasAnyAuthority("ROLE_ADMIN","ROLE_MEDICO","ROLE_PACIENTE")
+                        .requestMatchers(HttpMethod.GET, "/api/enfermedades/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_MEDICO", "ROLE_PACIENTE")
 
-                        // 🚨 Todo lo demás requiere autenticación
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
@@ -102,5 +118,18 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:4200"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

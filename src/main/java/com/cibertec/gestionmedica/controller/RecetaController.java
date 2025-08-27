@@ -1,8 +1,12 @@
 package com.cibertec.gestionmedica.controller;
 
+import com.cibertec.gestionmedica.dto.RecetaDTO;
+import com.cibertec.gestionmedica.dto.RecetaItemDTO;
 import com.cibertec.gestionmedica.model.*;
 import com.cibertec.gestionmedica.repository.*;
+import com.cibertec.gestionmedica.security.UserDetailsImpl;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,6 +30,38 @@ public class RecetaController {
         this.medicamentoRepository = medicamentoRepository;
     }
 
+  
+@GetMapping("/mis-recetas")
+public List<RecetaDTO> misRecetas(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+    Paciente paciente = pacienteRepository.findByUsuarioId(userDetails.getId());
+
+    return recetaRepository.findByPacienteId(paciente.getId())
+            .stream()
+            .map(r -> {
+                RecetaDTO dto = new RecetaDTO();
+                dto.setId(r.getId());
+                dto.setFechaEmision(r.getFechaEmision().toString());
+                dto.setFechaCaducidad(r.getFechaCaducidad().toString());
+                dto.setMedicoNombre(r.getMedico().getNombre());
+
+                // 🔹 Convertir los items
+                List<RecetaItemDTO> items = r.getItems().stream().map(it -> {
+                    RecetaItemDTO idto = new RecetaItemDTO();
+                    idto.setId(it.getId());
+                    idto.setMedicamento(it.getMedicamento().getNombre());
+                    idto.setDosis(it.getDosis());
+                    idto.setFrecuencia(it.getFrecuencia());
+                    return idto;
+                }).toList();
+
+                dto.setItems(items);
+
+                return dto;
+            })
+            .toList();
+}
+
+ 
     @GetMapping
     public List<Receta> listar() {
         return recetaRepository.findAll();
@@ -38,7 +74,6 @@ public class RecetaController {
 
     @PostMapping
     public ResponseEntity<?> crear(@RequestBody Receta receta) {
-        // 🔎 Validar alergias antes de guardar
         Paciente paciente = pacienteRepository.findById(receta.getPaciente().getId())
                 .orElseThrow();
 
@@ -60,7 +95,7 @@ public class RecetaController {
                 );
             }
 
-            item.setReceta(receta); // enlazar item con la receta
+            item.setReceta(receta);
         }
 
         Receta nueva = recetaRepository.save(receta);
