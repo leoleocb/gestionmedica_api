@@ -1,7 +1,9 @@
 package com.cibertec.gestionmedica.controller;
 
 import com.cibertec.gestionmedica.model.Alergia;
+import com.cibertec.gestionmedica.model.Paciente;
 import com.cibertec.gestionmedica.repository.AlergiaRepository;
+import com.cibertec.gestionmedica.repository.PacienteRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,48 +13,51 @@ import java.util.List;
 public class AlergiaController {
 
     private final AlergiaRepository alergiaRepository;
+    private final PacienteRepository pacienteRepository;
 
-    public AlergiaController(AlergiaRepository alergiaRepository) {
+    public AlergiaController(AlergiaRepository alergiaRepository, PacienteRepository pacienteRepository) {
         this.alergiaRepository = alergiaRepository;
+        this.pacienteRepository = pacienteRepository;
     }
 
-    // 📌 Listar todas las alergias
     @GetMapping
     public List<Alergia> listar() {
         return alergiaRepository.findAll();
     }
 
-    // 📌 Obtener alergia por ID
     @GetMapping("/{id}")
     public Alergia obtener(@PathVariable Long id) {
         return alergiaRepository.findById(id).orElseThrow();
     }
 
-    // 📌 Crear nueva alergia
     @PostMapping
     public Alergia crear(@RequestBody Alergia alergia) {
         return alergiaRepository.save(alergia);
     }
 
-    // 📌 Actualizar alergia
     @PutMapping("/{id}")
     public Alergia actualizar(@PathVariable Long id, @RequestBody Alergia alergia) {
         alergia.setId(id);
         return alergiaRepository.save(alergia);
     }
 
-    // 📌 Eliminar alergia
     @DeleteMapping("/{id}")
     public void eliminar(@PathVariable Long id) {
         alergiaRepository.deleteById(id);
     }
 
-    // 📌 Listar alergias por paciente
     @GetMapping("/paciente/{pacienteId}")
     public List<Alergia> listarPorPaciente(@PathVariable Long pacienteId) {
         return alergiaRepository.findAll()
                 .stream()
                 .filter(a -> a.getPaciente() != null && a.getPaciente().getId().equals(pacienteId))
                 .toList();
+    }
+
+    @PostMapping("/paciente/{pacienteId}")
+    public Alergia asignarAlergia(@PathVariable Long pacienteId, @RequestBody Alergia alergia) {
+        Paciente paciente = pacienteRepository.findById(pacienteId).orElseThrow();
+        alergia.setPaciente(paciente);
+        return alergiaRepository.save(alergia);
     }
 }

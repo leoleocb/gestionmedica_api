@@ -38,6 +38,9 @@ public class UsuarioController {
         if (usuarioRepository.existsByEmail(usuario.getEmail())) {
             return ResponseEntity.badRequest().body("El email ya está registrado");
         }
+        // ⚠️ Admin NO gestiona contraseñas
+        usuario.setPassword(null);
+
         Set<Role> roles = new HashSet<>();
         for (Role r : usuario.getRoles()) {
             Role role = roleRepository.findById(r.getId()).orElseThrow();
@@ -59,9 +62,7 @@ public class UsuarioController {
 
         existente.setName(usuario.getName());
         existente.setEmail(usuario.getEmail());
-        if (usuario.getPassword() != null && !usuario.getPassword().isBlank()) {
-            existente.setPassword(usuario.getPassword());
-        }
+       
 
         Set<Role> roles = new HashSet<>();
         for (Role r : usuario.getRoles()) {
