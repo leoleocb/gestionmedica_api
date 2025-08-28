@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface RecetaRepository extends JpaRepository<Receta, Long> {
     List<Receta> findByPacienteId(Long pacienteId);  
+    List<Receta> findByMedicoId(Long medicoId);
 }

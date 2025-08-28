@@ -62,6 +62,32 @@ public class RecetaController {
                 .toList();
     }
 
+    @GetMapping("/mis-recetas-medico")
+    public List<RecetaDTO> misRecetasMedico(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        Medico medico = medicoRepository.findByUsuarioId(userDetails.getId());
+        return recetaRepository.findByMedicoId(medico.getId())
+                .stream()
+                .map(r -> {
+                    RecetaDTO dto = new RecetaDTO();
+                    dto.setId(r.getId());
+                    dto.setFechaEmision(r.getFechaEmision().toString());
+                    dto.setFechaCaducidad(r.getFechaCaducidad().toString());
+                    dto.setMedicoNombre(medico.getNombre() + " " + medico.getApellido());
+                    List<RecetaItemDTO> items = r.getItems().stream().map(it -> {
+                        RecetaItemDTO idto = new RecetaItemDTO();
+                        idto.setId(it.getId());
+                        idto.setMedicamento(it.getMedicamento().getNombre());
+                        idto.setDosis(it.getDosis());
+                        idto.setFrecuencia(it.getFrecuencia());
+                        return idto;
+                    }).toList();
+                    dto.setItems(items);
+                    return dto;
+                })
+                .toList();
+    }
+
+
     @GetMapping
     public List<Receta> listar() {
         return recetaRepository.findAll();
