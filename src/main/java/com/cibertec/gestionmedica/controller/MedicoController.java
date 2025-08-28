@@ -9,6 +9,7 @@ import com.cibertec.gestionmedica.service.MedicoService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -49,15 +50,27 @@ public class MedicoController {
         Medico medico = medicoRepository.findByUsuarioId(userDetails.getId());
         return pacienteRepository.findPacientesByMedicoId(medico.getId());
     }
-
     @PostMapping
     public Medico crear(@RequestBody Medico medico) {
+        if (medico.getTarifaConsulta() == null) {
+            medico.setTarifaConsulta(new BigDecimal("0.00")); // valor por defecto
+        }
+        medico.setDisponible(true); // por defecto disponible
         return medicoService.crear(medico);
     }
 
     @PutMapping("/{id}")
     public Medico actualizar(@PathVariable Long id, @RequestBody Medico medico) {
-        return medicoService.actualizar(id, medico);
+        Medico existente = medicoService.obtener(id);
+        existente.setNombre(medico.getNombre());
+        existente.setApellido(medico.getApellido());
+        existente.setNumeroLicencia(medico.getNumeroLicencia());
+        existente.setTelefono(medico.getTelefono());
+        existente.setEmail(medico.getEmail());
+        existente.setEspecialidad(medico.getEspecialidad());
+        existente.setTarifaConsulta(medico.getTarifaConsulta());
+        existente.setDisponible(medico.isDisponible());
+        return medicoService.actualizar(id, existente);
     }
 
     @DeleteMapping("/{id}")
