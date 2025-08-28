@@ -18,10 +18,10 @@ public class TestController {
         return "👨‍⚕️ Bienvenido paciente autenticado.";
     }
 
-    @GetMapping("/doctor")
-    @PreAuthorize("hasRole('DOCTOR')")
-    public String soloDoctor() {
-        return "👨‍🔬 Bienvenido doctor autenticado.";
+    @GetMapping("/medico")
+    @PreAuthorize("hasRole('MEDICO')")
+    public String soloMedico() {
+        return "👨‍⚕️ Bienvenido médico autenticado.";
     }
 
     @GetMapping("/admin")
@@ -30,9 +30,9 @@ public class TestController {
         return "🔐 Bienvenido administrador autenticado.";
     }
 
-    @GetMapping("/doctor-o-admin")
-    @PreAuthorize("hasAnyRole('DOCTOR','ADMIN')")
-    public String doctorOAdmin() {
-        return "🩺 Esta ruta es accesible para DOCTOR o ADMIN.";
+    @GetMapping("/medico-o-admin")
+    @PreAuthorize("hasAnyRole('MEDICO','ADMIN')")
+    public String medicoOAdmin() {
+        return "🩺 Esta ruta es accesible para MÉDICO o ADMIN.";
     }
 }

@@ -10,6 +10,10 @@ import com.cibertec.gestionmedica.security.UserDetailsImpl;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -28,55 +32,77 @@ public class CitaController {
         this.medicoRepository = medicoRepository;
     }
 
-    // 🔹 ADMIN: listar todas
     @GetMapping
     public List<Cita> listar() {
         return citaRepository.findAll();
     }
 
-    // 🔹 PACIENTE: sus propias citas
     @GetMapping("/mis-citas")
     public List<Cita> misCitas(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         Paciente paciente = pacienteRepository.findByUsuarioId(userDetails.getId());
         return citaRepository.findByPacienteId(paciente.getId());
     }
 
-    // 🔹 MÉDICO: sus citas asignadas
     @GetMapping("/mis-citas-medico")
     public List<Cita> misCitasMedico(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         Medico medico = medicoRepository.findByUsuarioId(userDetails.getId());
         return citaRepository.findByMedicoId(medico.getId());
     }
 
-    // obtener por id (Admin o Médico)
     @GetMapping("/{id:[0-9]+}")
     public Cita obtener(@PathVariable Long id) {
         return citaRepository.findById(id).orElseThrow();
     }
 
-    // crear cita (Paciente)
     @PostMapping
     public Cita crear(@RequestBody Cita cita, @AuthenticationPrincipal UserDetailsImpl userDetails) {
         Paciente paciente = pacienteRepository.findByUsuarioId(userDetails.getId());
+
+        long citasDelDia = citaRepository.findByPacienteId(paciente.getId()).stream()
+                .filter(c -> c.getFecha().equals(cita.getFecha()))
+                .count();
+        if (citasDelDia >= 3) {
+            throw new RuntimeException("El paciente ya tiene 3 citas programadas en ese día.");
+        }
+
+        boolean ocupado = citaRepository.findByMedicoId(cita.getMedico().getId()).stream()
+                .anyMatch(c -> c.getFecha().equals(cita.getFecha()) && c.getHora().equals(cita.getHora()));
+        if (ocupado) {
+            throw new RuntimeException("El médico ya tiene una cita en ese horario.");
+        }
+
+        if (cita.getFecha().getDayOfWeek() == DayOfWeek.SATURDAY ||
+                cita.getFecha().getDayOfWeek() == DayOfWeek.SUNDAY ||
+                cita.getHora().isBefore(java.time.LocalTime.of(8, 0)) ||
+                cita.getHora().isAfter(java.time.LocalTime.of(17, 0))) {
+            throw new RuntimeException("Las citas solo pueden programarse de lunes a viernes entre 08:00 y 17:00.");
+        }
+
         cita.setPaciente(paciente);
         cita.setEstado("PROGRAMADA");
         return citaRepository.save(cita);
     }
 
-    // actualizar cita (Admin/Médico)
     @PutMapping("/{id:[0-9]+}")
     public Cita actualizar(@PathVariable Long id, @RequestBody Cita cita) {
         cita.setId(id);
         return citaRepository.save(cita);
     }
 
-    // eliminar cita (Admin/Paciente)
     @DeleteMapping("/{id:[0-9]+}")
-    public void eliminar(@PathVariable Long id) {
+    public void eliminar(@PathVariable Long id, @AuthenticationPrincipal UserDetailsImpl userDetails) {
+        Cita cita = citaRepository.findById(id).orElseThrow();
+        LocalDateTime ahora = LocalDateTime.now();
+        LocalDateTime inicioCita = LocalDateTime.of(cita.getFecha(), cita.getHora());
+
+        long horasDiferencia = Duration.between(ahora, inicioCita).toHours();
+        if (horasDiferencia < 2) {
+            throw new RuntimeException("No se puede cancelar la cita con menos de 2 horas de anticipación.");
+        }
+
         citaRepository.deleteById(id);
     }
 
-    // actualizar estado (Admin/Médico)
     @PutMapping("/{id:[0-9]+}/estado")
     public Cita actualizarEstado(@PathVariable Long id, @RequestParam String estado) {
         Cita cita = citaRepository.findById(id).orElseThrow();

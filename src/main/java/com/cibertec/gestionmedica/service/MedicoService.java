@@ -46,7 +46,7 @@ public class MedicoService {
         Usuario usuario = new Usuario();
         usuario.setName(medico.getNombre() + " " + medico.getApellido());
         usuario.setEmail(medico.getEmail());
-        usuario.setPassword(passwordEncoder.encode("123456")); // contraseña default
+        usuario.setPassword(passwordEncoder.encode("medico123")); 
 
         Role rolMedico = roleRepository.findByName("ROLE_MEDICO")
                 .orElseThrow(() -> new RuntimeException("Rol ROLE_MEDICO no encontrado"));
