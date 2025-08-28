@@ -30,6 +30,7 @@ public class ExpedienteController {
         this.medicoRepository = medicoRepository;
     }
 
+    // PACIENTE → ver su propio expediente
     @GetMapping("/mis-expedientes")
     public ResponseEntity<?> getMiExpediente(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         Paciente paciente = pacienteRepository.findByUsuarioId(userDetails.getId());
@@ -39,6 +40,7 @@ public class ExpedienteController {
         return ResponseEntity.ok(buildDTO(paciente));
     }
 
+    // MÉDICO/ADMIN → ver expediente de un paciente específico
     @GetMapping("/paciente/{id}")
     public ResponseEntity<?> getExpediente(@PathVariable Long id,
                                            @AuthenticationPrincipal UserDetailsImpl userDetails) {
@@ -51,6 +53,7 @@ public class ExpedienteController {
         return ResponseEntity.ok(buildDTO(paciente));
     }
 
+    // MÉDICO/ADMIN → añadir nueva entrada (diagnóstico/tratamiento)
     @PostMapping("/paciente/{id}/entrada")
     public ResponseEntity<?> nuevaEntrada(@PathVariable Long id,
                                           @RequestBody EntradaHistorial entrada,
@@ -79,6 +82,24 @@ public class ExpedienteController {
         return ResponseEntity.ok(guardada);
     }
 
+    // ADMIN → ver todos los expedientes globales
+    @GetMapping("/all")
+    public ResponseEntity<?> getAllExpedientes(@AuthenticationPrincipal UserDetailsImpl userDetails) {
+        boolean autorizado = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (!autorizado) {
+            return ResponseEntity.status(403).body("Solo el administrador puede ver todos los expedientes");
+        }
+
+        return ResponseEntity.ok(
+                pacienteRepository.findAll()
+                        .stream()
+                        .map(this::buildDTO)
+                        .collect(Collectors.toList())
+        );
+    }
+
+    // Construcción del DTO de Expediente
     private ExpedienteDTO buildDTO(Paciente paciente) {
         ExpedienteDTO dto = new ExpedienteDTO();
         dto.setNombrePaciente(paciente.getNombre());
