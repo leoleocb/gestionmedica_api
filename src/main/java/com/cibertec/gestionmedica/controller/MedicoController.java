@@ -26,6 +26,13 @@ public class MedicoController {
         return medicoService.obtener(id);
     }
 
+    @GetMapping("/especialidad")
+    public List<Medico> listarPorEspecialidad(@RequestParam String nombre) {
+        return medicoService.listar().stream()
+                .filter(m -> m.getEspecialidad().equalsIgnoreCase(nombre) && m.isDisponible())
+                .toList();
+    }
+
     @PostMapping
     public Medico crear(@RequestBody Medico medico) {
         return medicoService.crear(medico);

@@ -15,6 +15,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/citas")
@@ -108,5 +109,25 @@ public class CitaController {
         Cita cita = citaRepository.findById(id).orElseThrow();
         cita.setEstado(estado);
         return citaRepository.save(cita);
+    }
+
+    @GetMapping("/disponibilidad/{medicoId}/{fecha}")
+    public List<String> disponibilidad(@PathVariable Long medicoId, @PathVariable String fecha) {
+        LocalDate fechaSeleccionada = LocalDate.parse(fecha);
+        List<Cita> citas = citaRepository.findByMedicoId(medicoId);
+
+        List<String> horarios = new ArrayList<>();
+        for (int h = 8; h <= 17; h++) {
+            horarios.add(String.format("%02d:00", h));
+        }
+
+        List<String> ocupados = citas.stream()
+                .filter(c -> c.getFecha().equals(fechaSeleccionada))
+                .map(c -> c.getHora().toString())
+                .toList();
+
+        horarios.removeAll(ocupados);
+
+        return horarios;
     }
 }
