@@ -2,7 +2,6 @@ package com.cibertec.gestionmedica.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -29,6 +28,9 @@ public class Medico {
 
     private boolean disponible;
     private BigDecimal tarifaConsulta;
+
+    // 👇 Nuevo campo
+    private String horarioAtencion; // Ejemplo: "L-V, 08:00 - 17:00"
 
     @OneToOne
     @JoinColumn(name = "usuario_id")

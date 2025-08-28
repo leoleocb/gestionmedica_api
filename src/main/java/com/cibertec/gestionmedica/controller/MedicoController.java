@@ -38,24 +38,33 @@ public class MedicoController {
         return medicoService.obtener(id);
     }
 
-    @GetMapping("/especialidad")
-    public List<Medico> listarPorEspecialidad(@RequestParam String nombre) {
-        return medicoService.listar().stream()
-                .filter(m -> m.getEspecialidad().equalsIgnoreCase(nombre) && m.isDisponible())
-                .toList();
-    }
+        @GetMapping("/especialidades")
+        public List<String> listarEspecialidades() {
+            return medicoService.listar().stream()
+                    .map(Medico::getEspecialidad)
+                    .distinct()
+                    .toList();
+        }
+
+        @GetMapping("/especialidad")
+        public List<Medico> listarPorEspecialidad(@RequestParam String nombre) {
+            return medicoService.listar().stream()
+                    .filter(m -> m.getEspecialidad().equalsIgnoreCase(nombre) && m.isDisponible())
+                    .toList();
+        }
 
     @GetMapping("/mis-pacientes")
     public List<Paciente> misPacientes(@AuthenticationPrincipal UserDetailsImpl userDetails) {
         Medico medico = medicoRepository.findByUsuarioId(userDetails.getId());
         return pacienteRepository.findPacientesByMedicoId(medico.getId());
     }
+
     @PostMapping
     public Medico crear(@RequestBody Medico medico) {
         if (medico.getTarifaConsulta() == null) {
-            medico.setTarifaConsulta(new BigDecimal("0.00")); // valor por defecto
+            medico.setTarifaConsulta(new BigDecimal("0.00"));
         }
-        medico.setDisponible(true); // por defecto disponible
+        medico.setDisponible(true);
         return medicoService.crear(medico);
     }
 
